@@ -12,18 +12,19 @@ import static javax.persistence.GenerationType.IDENTITY;
 /**
  * @author hwz
  */
-@Data
-@Entity
-@Table(name = "sys_user")
+@Data     //提供类所有属性的 getting 和 setting 方法，此外还提供了equals、canEqual、hashCode、toString 方法
+@Entity   //标明这个类是一个实体类（在数据传输过程中对数据进行封装，相当于一个工具，容器，可以通过其中的set、get、等方法对数据进行存储、传输、管理）
+@Table(name = "sys_user")  //定义映射的表，也就是数据库中对应的表（一般如果类名与数据库表名一致的话，可以不写）
 public class User implements Serializable {
 
-    @Id
+    @Id    //表示该属性为主键(数据库中表的主键)
     @ApiModelProperty(value = "主键", name = "id", example = "0")
-    @GeneratedValue(strategy = IDENTITY)
+    @GeneratedValue(strategy = IDENTITY)  //表示主键生成的策略（）
     private Long id;
 
     @ApiModelProperty(value = "用户名（唯一）", name = "username", example = "username")
-    @Column(name = "username", unique = true)
+    @Column(name = "username", unique = true)  //当实体类中的属性与数据库中的字段不一致的时候，使用@Column标签设置映射的数据库表的列名
+                                //unique属性:表示这个字段是否为唯一标识（也就是一个键，但可以不是主键，在数据库中同一个列中只能出现一次）
     private String username;
 
     @ApiModelProperty(value = "密码", name = "password", example = "password")
@@ -32,6 +33,7 @@ public class User implements Serializable {
 
     @ApiModelProperty(value = "登录次数", name = "login_count", example = "0")
     @Column(name = "login_count", columnDefinition = "INT DEFAULT 0", insertable = false)
+                                    //columnDefinition属性：表示创建表时，该字段创建的SQL语句，一般用于通过Entity生成表定义时使用，如果数据库中表已经建好，该属性没有必要使用
     private Integer loginCount;
 
     @ApiModelProperty(value = "状态(0,1)，0停用，1启用", name = "status", example = "0")
@@ -84,6 +86,8 @@ public class User implements Serializable {
 
     @ApiModelProperty(value = "收藏话题数量", name = "collectTopicNum", example = "0")
     @Column(name = "collect_topic_num", columnDefinition = "INT DEFAULT 0", insertable = false)
+                                                                           //insertable:表示在使用”INSERT”语句插入数据时，是否需要插入该字段的值
+                                                                           //insertable和updateable一般多用于只读属性，例如主键，外键，这些属性一般都是插入数据时自动生成
     private Integer collectTopicNum;
 
     @ApiModelProperty(value = "我关注的人数量", name = "concertUserNum", example = "0")

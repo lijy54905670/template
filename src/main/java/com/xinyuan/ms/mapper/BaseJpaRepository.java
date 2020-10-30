@@ -15,7 +15,7 @@ import java.io.Serializable;
 
 @NoRepositoryBean
 public interface BaseJpaRepository<T, ID extends Serializable> extends JpaRepository<T, ID>,JpaSpecificationExecutor {
-
+                                                                        /*一个接口可以继承多个接口*/
 
 
 }

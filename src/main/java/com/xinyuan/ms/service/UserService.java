@@ -11,7 +11,7 @@ import java.util.List;
  * @author hzx
  * @date 2019/7/10 10:11
  */
-@Service
+@Service          // 一般用于修饰service层的组件
 public class UserService extends BaseService<UserRepository, User,Long> {
 
     /**

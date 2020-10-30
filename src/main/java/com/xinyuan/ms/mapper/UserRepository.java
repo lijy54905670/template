@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
  * @author hzx
  * @date 2019/7/10 10:10
  */
-@Repository
+@Repository     //持久层组件
 public interface UserRepository extends BaseJpaRepository<User,Long>{
 
 }

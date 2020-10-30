@@ -66,11 +66,11 @@ public class ReflectionUtils {
         }
         Object result = null;
         try {
-            result = field.get(obj);
+            result = field.get(obj);                      //获取属性的属性值
         } catch (IllegalAccessException e) {
             log.error("不可能抛出的异常{}", e.getMessage());
         }
-        return result;
+        return result;                                   //返回得到的属性值
     }
 
     /**
@@ -164,10 +164,13 @@ public class ReflectionUtils {
     public static Field getAccessibleField(final Object obj, final String fieldName) {
         Validate.notNull(obj, "object can't be null");
         Validate.notBlank(fieldName, "fieldName can't be blank");
+        /**
+         * 查看当前类及其父类中是否有fieldName的字段
+         */
         for (Class<?> superClass = obj.getClass(); superClass != Object.class; superClass = superClass.getSuperclass()) {
             try {
                 Field field = superClass.getDeclaredField(fieldName);
-                makeAccessible(field);
+                makeAccessible(field);                                       //将这个属性的访问权限修改为可以获得（强制改变）
                 return field;
             } catch (NoSuchFieldException e) {//NOSONAR
                 // Field不在当前类定义,继续向上转型
@@ -331,8 +334,8 @@ public class ReflectionUtils {
      * 无属性返回false
      */
     public static boolean hasField(final Object obj, final String fieldName) {
-        Field field = getAccessibleField(obj, fieldName);
-        return field != null;
+        Field field = getAccessibleField(obj, fieldName); //如果存在这个属性，则返回一个field，如果没有则返回一个null
+        return field != null;  //如果有的话条件满足，返回true；否则null != null 返回false
 
     }
 }

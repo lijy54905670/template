@@ -40,11 +40,11 @@ import java.util.UUID;
  * @author
  * @since 2018-03-06
  */
-@Slf4j
+@Slf4j  //如果不想每次都写private  final Logger logger = LoggerFactory.getLogger(当前类名.class); 可以用注解@Slf4j;
 public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID extends Serializable> {
 
-    @Autowired
-    protected J bizRepository;
+    @Autowired  //自动导入依赖的bean
+    protected J bizRepository;    //注入接口，类型是一个泛型，在使用时具体赋值，提高了代码的可重用性
 
     @Autowired
     private EntityManager entityManager;
@@ -61,20 +61,23 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
      * @author 2018-03-06 14:00
      */
     @Transactional(rollbackFor = Exception.class)
-    public T save(T entity) throws BaseException {
+    public T save(T entity) throws BaseException {              //传入一个user对象
         String fieldName = "id";
 
-        T jpaResult = bizRepository.saveAndFlush(entity);
+        //T jpaResult = bizRepository.saveAndFlush(entity);       //存储传入的user对象、并且立即刷新到数据库中去******************************
+        T jpaResult = bizRepository.save(entity);                  //可以使用save（）方法进行插入，但是使用save（）可能只暂时保留在内存中，直到发出flush或commit命令
         //清空一级缓存
         entityManager.clear();
 
-        T result = null;
+        T result = null;                                        //创建一个User类型的变量
 
-        if (ReflectionUtils.hasField(jpaResult, fieldName)) {
-
-            result = bizRepository.findOne((ID) ReflectionUtils.getFieldValue(jpaResult, fieldName));
+       if (ReflectionUtils.hasField(jpaResult, fieldName)) {     //当传入的对象中有id这个字段时执行
+            /**
+             * 用于判断插入的数据是否插入成功
+             */
+            result = bizRepository.findOne((ID) ReflectionUtils.getFieldValue(jpaResult, fieldName)/*这里会返回一个fieldName属性的属性值*/);
         }
-        return result;
+        return result;  //返回一个结果，用于判断是否已经save数据成功
     }
 
     /**
