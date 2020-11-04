@@ -10,6 +10,7 @@ import com.xinyuan.ms.common.util.ResultUtil;
 import com.xinyuan.ms.common.web.Conditions;
 import com.xinyuan.ms.common.web.Message;
 import com.xinyuan.ms.common.web.PageBody;
+import com.xinyuan.ms.entity.User;
 import com.xinyuan.ms.exception.BaseException;
 import com.xinyuan.ms.mapper.BaseJpaRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,8 +66,8 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
     public T save(T entity) throws BaseException {              //传入一个user对象
         String fieldName = "id";
 
-        //T jpaResult = bizRepository.saveAndFlush(entity);       //存储传入的user对象、并且立即刷新到数据库中去******************************
-        T jpaResult = bizRepository.save(entity);                  //可以使用save（）方法进行插入，但是使用save（）可能只暂时保留在内存中，直到发出flush或commit命令
+        T jpaResult = bizRepository.saveAndFlush(entity);       //存储传入的user对象、并且立即刷新到数据库中去******************************
+        //T jpaResult = bizRepository.save(entity);                  //可以使用save（）方法进行插入，但是使用save（）可能只暂时保留在内存中，直到发出flush或commit命令
         //清空一级缓存
         entityManager.clear();
 
@@ -86,14 +88,15 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
      * @author 2018-03-06 14:01
      */
     public void remove(ID id) throws BaseException {
-        T entity = bizRepository.findOne(id);
-        if (entity != null) {
-            if (ReflectionUtils.hasField(entity, "deleted")) {
-                ReflectionUtils.invokeSetter(entity, "deleted", 1);
+        T entity = bizRepository.findOne(id);                   //删除一条记录之前需要判断数据库中是否存在，使用findOne（id）查，如果有的话会返回一个user对象
+        if (entity != null) {                                   //如果返回的user对象不是空的，则表示数据库中存在这条记录，可以执行删除方法
+            if (ReflectionUtils.hasField(entity, "deleted")) {   //判断查询出来的这个user对象中是否有deleted这个属性，如果有的话则执行下面代码
+                ReflectionUtils.invokeSetter(entity, "deleted", 1);  //这里是使用反射，通过setXXX方法将entity中的deleted属性的值设为1
             }
-            bizRepository.save(entity);
+            bizRepository.save(entity);     //将修改好以后的对象再次保存到数据库中（这里调用的save()方法是JpaRepository中的）
         }
     }
+
 
     /**
      * 业务更新方法(初始化和校验)
@@ -103,12 +106,20 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
     @Transactional(rollbackFor = Exception.class)
     public void update(T entity) throws BaseException {
         T result = null;
-        if (ReflectionUtils.hasField(entity, "id")) {
-            ID id = (ID) ReflectionUtils.getFieldValue(entity, "id");
-            result = bizRepository.findOne(id);
+        if (ReflectionUtils.hasField(entity, "id")) {                       //判断传入的User对象是否存在id属性
+            ID id = (ID) ReflectionUtils.getFieldValue(entity, "id");       //获取id的属性值（没有设置的话为null）
+            result = bizRepository.findOne(id);                                       //通过得到的值，从数据库中查询对应的记录（如果你save没有给id话，回报错）
         }
-        EntityUtils.copyPropertiesIgnoreNull(entity, result);
-        bizRepository.saveAndFlush(result);
+        /**
+         * 可以在这里做如果数据库中没有这个记录的话就插入操作
+         */
+        if (result == null){
+            bizRepository.saveAndFlush(entity);                             //如果数据库中没有这条记录，则插入（但是id不是当前的id，而是数据库的id了）
+        }
+
+        EntityUtils.copyPropertiesIgnoreNull(entity, result);            //将非空的属性值copy到result对象中去（也就是把你修改了值得那部分替换原来的数据，没有修改的那部分不动他）
+        //如果你给的要更新的字段在数据库中没有的话，会抛出异常
+        bizRepository.saveAndFlush(result);                              //将修改好后的对象保存回数据库
     }
 
     /**
@@ -126,6 +137,9 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
      * @author 2018-03-08 9:17
      */
     public Page findByCondition(Integer pageNum, Integer pageSize, Sort sort, List<SelectParam> selectParams) {
+        /**
+         * pageNum:当前页号  pageSize：页面大小    sort：排序方法     selectParams：一个对象，包含查询时使用的（参数键，参数值，查询的类型）
+         * */
         int page = 1;
         int limit = 10;
         if (pageNum != null) {
@@ -135,9 +149,9 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
             limit = pageSize;
         }
 
-        Specification querySpecifi = getSpecification(selectParams, false);
+        Specification querySpecifi = getSpecification(selectParams, false);                              //      没看懂是用来干什么的
         PageBean pageBean = new PageBean(page, limit, sort);
-        return bizRepository.findAll(querySpecifi, pageBean);
+        return bizRepository.findAll(querySpecifi, pageBean);               //执行查询语句
     }
 
     /**
@@ -199,14 +213,14 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
      * @author 2018-03-13 16:04
      */
     private Specification getSpecification(List<SelectParam> selectParams, boolean isDelete) {
-        return (Specification<T>) (root, criteriaQuery, criteriaBuilder) -> {
+        return (Specification<T>) (root, criteriaQuery, criteriaBuilder) -> {                               //返回一个匿名的Specification对象
             List<Predicate> predicates = new ArrayList<>();
             if (!isDelete) {
                 predicates.add(criteriaBuilder.equal(root.get("deleted"), 0));
             }
-            if (selectParams != null) {
+            if (selectParams != null) {                                  //查询的条件列表有
                 for (SelectParam s : selectParams) {
-                    switch (s.getCondition()) {
+                    switch (s.getCondition()) {                          //得到查询的类型（=，>,<,>=,<=……）
                         case EQUAL:
                             predicates.add(criteriaBuilder.equal(root.get(s.getParamKey()),
                                     s.getParamValue()));
@@ -256,12 +270,12 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
      * @return
      */
     public List<SelectParam> getSelectParamList(ArrayList<Conditions> list) {
-        List<SelectParam> selectParamList = new ArrayList<>();
-        if (list != null) {
+        List<SelectParam> selectParamList = new ArrayList<>();            //传入的查询条件可有多个（用于存储你设置的参数键（id），参数值（5），查询的类型（EQUAL）  id = 5）
+        if (list != null) {                                               //你有Conditions的相关设置（查询类型，字段，值）
             for (Conditions mapBean : list) {
-                ParamCondition paramCondition = null;
-                String condition = mapBean.getCondition();
-                switch (condition) {
+                ParamCondition paramCondition = null;                     //查询类型（枚举类型）
+                String condition = mapBean.getCondition();                //从conditions对象中获取得到查询条件（Condition）
+                switch (condition) {                                      //匹配你传入的判断条件，匹配成功后给paramCondition对象赋值（如果你没有查询条件，则默认为EQUAL）
                     case "GREATERTHAN":
                         paramCondition = ParamCondition.GREATERTHAN;
                         break;
@@ -285,7 +299,12 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
                         break;
                 }
 
-                if (!ObjectUtils.isEmpty(mapBean.getValue())) {
+                if (!ObjectUtils.isEmpty(mapBean.getValue())) {    //如果你的查询有值得话 （where id = ）等于后面有值
+                    /**
+                     * 初始化一个有参数键，参数值，以及查询条件的SelectParam对象
+                     *
+                     * 因为可能where后面的条件有很多，所以需要一个列表进行存储
+                     */
                     SelectParam selectParam = new SelectParam(mapBean.getKey(), mapBean.getValue(), paramCondition);
                     selectParamList.add(selectParam);
                 }
@@ -354,9 +373,13 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
 
     public Page query(PageBody pageBody) {
         Page page;
-        Sort sort = sort(pageBody.getOrder());
+        Sort sort = sort(pageBody.getOrder());   //new一个Sort对象，并且初始化排序的字段以及类型（desc,asc），如果你没有设置的话默认为通过id进行asc排序
 
-        if (pageBody.getPageBean() != null) {
+        if (pageBody.getPageBean() != null) {    //判断是否设置了分页属性
+            /**
+             * findByCondition(当前页号，页面大小，排序方法（sort），查询的参数（conditions）)
+             * 如果没有传入分页的相关配置的话：页号（1），页面大小（10）
+             */
             page = findByCondition(pageBody.getPageBean().getPageNumber(), pageBody.getPageBean().getPageSize(), sort, getSelectParamList(pageBody.getConditions()));
         } else {
             page = findByCondition(1, Integer.MAX_VALUE, sort, getSelectParamList(pageBody.getConditions()));
@@ -379,5 +402,18 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
         return sort;
     }
 
-
+    public void test(){
+        List<User> byDeletedEquals = bizRepository.findUserByDeletedEquals(0);
+        if (byDeletedEquals.isEmpty()){
+            System.out.println("没有数据");
+        }
+        Iterator<User> iterator = byDeletedEquals.iterator();
+        int i = 0;
+        while (iterator.hasNext()){
+            i++;
+            System.out.println(iterator.next().getAge());
+            if(i == 3)
+                break;
+        }
+    }
 }

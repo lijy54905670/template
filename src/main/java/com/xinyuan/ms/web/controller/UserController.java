@@ -3,8 +3,10 @@ package com.xinyuan.ms.web.controller;
 import com.xinyuan.ms.common.util.ResultUtil;
 import com.xinyuan.ms.common.web.Message;
 import com.xinyuan.ms.common.web.PageBody;
+import com.xinyuan.ms.web.vo.Survey;
 import com.xinyuan.ms.entity.User;
 import com.xinyuan.ms.service.UserService;
+import com.xinyuan.ms.web.vo.Test1;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -25,7 +28,6 @@ import java.util.List;
                         //负责将用户发来的URL请求转发到对应的服务接口（service层）
 @RequestMapping("/user")  //提供路由信息，负责URL到Controller中的具体函数的映射。
 public class UserController {
-
 
     @Autowired    //自动导入依赖的bean,将spring容器中的bean注入到定义的变量中，一般通过类型，和名字来注入
     private UserService userService;
@@ -39,17 +41,18 @@ public class UserController {
         return ResponseEntity.ok(ResultUtil.success());
     }
 
-    @ApiOperation(value = "保存2", notes = "保存2")
-    @RequestMapping(value = "save2", method = RequestMethod.POST)
-    public ResponseEntity<Message> save2(@RequestBody User user) {
-        userService.save(user);
-        return ResponseEntity.ok(ResultUtil.success());
-    }
-
     @ApiOperation(value = "删除", notes = "删除")
     @RequestMapping(value = "delete", method = RequestMethod.POST)
     public ResponseEntity<Message> delete(@RequestBody List<Long> ids) {
         userService.removeList(ids);
+        return ResponseEntity.ok(ResultUtil.success());
+    }
+
+
+    @ApiOperation(value = "删除1", notes = "删除1")
+    @RequestMapping(value = "delete1", method = RequestMethod.POST)
+    public ResponseEntity<Message> delete1(@RequestBody Long ids) {
+        userService.remove(ids);
         return ResponseEntity.ok(ResultUtil.success());
     }
 
@@ -63,14 +66,26 @@ public class UserController {
 
     @ApiOperation(value = "条件查询", notes = "条件查询")  //给方法添加说明
     @RequestMapping(value = "query", method = RequestMethod.POST)
-    public ResponseEntity<Page<User>> query(@RequestBody PageBody pageBody) {
+    public ResponseEntity query(@RequestBody PageBody pageBody) {       //PageBody:查询条件、排序条件、分页的配置
         Page<User> page = null;
+        userService.test();
+        Test1 t = new Test1();
         try {
             page = userService.query(pageBody);
+            List<User> content = page.getContent();
+            Iterator iterator = content.iterator();
+            while (iterator.hasNext()){
+                User user = (User) iterator.next();
+                System.out.println(user.getId());
+            }
 
+            t.setPage(page);
+            Survey survey = new Survey();
+            survey.setId(1l);
+            t.setSurvey(survey);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ResponseEntity.ok(page);
+        return ResponseEntity.ok(t);
     }
 }

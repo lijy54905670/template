@@ -3,6 +3,8 @@ package com.xinyuan.ms.mapper;
 import com.xinyuan.ms.entity.User;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 /**
  * @Description:
  * @author hzx
@@ -10,5 +12,4 @@ import org.springframework.stereotype.Repository;
  */
 @Repository     //持久层组件
 public interface UserRepository extends BaseJpaRepository<User,Long>{
-
 }

@@ -42,16 +42,16 @@ public class ReflectionUtils {
      * 调用Setter方法, 仅匹配方法名。
      * 支持多级，如：对象名.对象名.方法
      */
-    public static void invokeSetter(Object obj, String propertyName, Object value) {
+    public static void invokeSetter(Object obj, String propertyName, Object value) {  //传入一个user对象，一个属性，以及这个属性修改成什么值
         Object object = obj;
-        String[] names = StringUtils.split(propertyName, ".");
+        String[] names = StringUtils.split(propertyName, ".");     //仅仅是对多级结构有作用：对象名.对象名.方法
         for (int i = 0; i < names.length; i++) {
-            if (i < names.length - 1) {
-                String getterMethodName = GETTER_PREFIX + StringUtils.capitalize(names[i]);
+            if (i < names.length - 1) {                                               //names[]还有数据时
+                String getterMethodName = GETTER_PREFIX + StringUtils.capitalize(names[i]);      //get + 将名字首字母大写(应该就是获取到user对象中的getXXX()方法)
                 object = invokeMethod(object, getterMethodName, new Class[]{}, new Object[]{});
             } else {
-                String setterMethodName = SETTER_PREFIX + StringUtils.capitalize(names[i]);
-                invokeMethodByName(object, setterMethodName, new Object[]{value});
+                String setterMethodName = SETTER_PREFIX + StringUtils.capitalize(names[i]);      //应该就是获取到user对象中的setXXX()方法（用于修改user中的属性值）
+                invokeMethodByName(object, setterMethodName, new Object[]{value});      //这里传入了value
             }
         }
     }
@@ -123,6 +123,7 @@ public class ReflectionUtils {
      * 直接调用对象方法, 无视private/protected修饰符.
      * 用于一次性调用的情况，否则应使用getAccessibleMethod()函数获得Method后反复调用.
      * 同时匹配方法名+参数类型，
+     *
      */
     public static Object invokeMethod(final Object obj, final String methodName, final Class<?>[] parameterTypes,
                                       final Object[] args) {
@@ -144,13 +145,13 @@ public class ReflectionUtils {
      * 只匹配函数名，如果有多个同名函数调用第一个。
      */
     public static Object invokeMethodByName(final Object obj, final String methodName, final Object[] args) {
-        Method method = getAccessibleMethodByName(obj, methodName);
+        Method method = getAccessibleMethodByName(obj, methodName);       //获取setXXX()方法
         if (method == null) {
             throw new IllegalArgumentException("Could not find method [" + methodName + "] on target [" + obj + "]");
         }
 
         try {
-            return method.invoke(obj, args);
+            return method.invoke(obj, args);              //这里传入了参数，所以可以使用setXXX方法修改对象中的指定属性的属性值
         } catch (Exception e) {
             throw convertReflectionExceptionToUnchecked(e);
         }

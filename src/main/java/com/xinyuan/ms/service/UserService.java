@@ -20,8 +20,9 @@ public class UserService extends BaseService<UserRepository, User,Long> {
      * @param ids
      */
     public void removeList(List<Long> ids) {
-        for (Long i : ids) {
-            remove(i);
+        for (Long i : ids) {    //因为可能需要删除多个，，就需要一个循环，逐个删除
+            remove(i);          //使用remove（)删除指定的记录（这个remove（）是他的父类BaseService中的方法）
         }
     }
+
 }
