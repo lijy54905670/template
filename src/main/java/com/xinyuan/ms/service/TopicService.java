@@ -11,11 +11,15 @@ import com.xinyuan.ms.entity.Topic;
 import com.xinyuan.ms.entity.TopicCourse;
 import com.xinyuan.ms.mapper.TopicDao;
 import com.xinyuan.ms.web.request.SaveIdsState;
+import com.xinyuan.ms.web.request.SaveSort;
 import com.xinyuan.ms.web.request.SaveTopicOptions;
 import com.xinyuan.ms.web.vo.TopicVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
@@ -201,5 +205,17 @@ public class TopicService extends BaseService<TopicDao, Topic,Long> {
         topicVo.setQuestionTypeName(questionTypeService.findTypeById(topic.getQuestionTypeId()));
         topicVo.setStatus(statusService.findNameById(topic.getStatus()));
         return topicVo;
+    }
+
+
+    /**
+     * 分类排序
+     * @param sorts
+     */
+    @Transactional(isolation = Isolation.SERIALIZABLE,propagation = Propagation.NESTED)
+    public void topicSort(List<SaveSort> sorts){
+        for (SaveSort sort : sorts){
+            bizRepository.updateSorts(sort.getId(), sort.getSort());
+        }
     }
 }

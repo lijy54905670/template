@@ -3,6 +3,7 @@ package com.xinyuan.ms.web.controller;
 import com.xinyuan.ms.common.web.Conditions;
 import com.xinyuan.ms.entity.Classify;
 import com.xinyuan.ms.service.ClassifyService;
+import com.xinyuan.ms.web.vo.Menu;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,21 @@ public class ClassifyController {
         List<Classify> classify = classifyService.query(conditions);
         return ResponseEntity.ok(classify);
     }
+
+    /**
+     * 显示左侧分类（返回一个递归树）
+     * @param conditions
+     * @return
+     */
+    @ApiOperation(value = "查询分类树",notes = "查询分类树")
+    @RequestMapping(value = "query2",method = RequestMethod.POST)
+    public ResponseEntity query2(@RequestBody List<Conditions> conditions){
+        List<Menu> menuList = classifyService.recursionTree(conditions);
+        return ResponseEntity.ok(menuList);
+    }
+
+
+
 
     /**
      * 添加分类

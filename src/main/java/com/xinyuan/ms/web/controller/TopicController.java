@@ -81,10 +81,14 @@ public class TopicController {
         }
     }
 
+    /**
+     * 分类排序
+     * @param saveSorts
+     */
     @ApiModelProperty(value = "排序",notes = "排序")
     @RequestMapping(value = "sort",method = RequestMethod.POST)
-    public void sort(List<SaveSort> saveSorts){
-
+    public void sort(@RequestBody List<SaveSort> saveSorts){
+        topicService.topicSort(saveSorts);
     }
 
 

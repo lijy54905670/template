@@ -4,6 +4,7 @@ import com.xinyuan.ms.common.service.SelectParam;
 import com.xinyuan.ms.common.web.Conditions;
 import com.xinyuan.ms.entity.Classify;
 import com.xinyuan.ms.mapper.ClassifyDao;
+import com.xinyuan.ms.web.vo.Menu;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ public class ClassifyService extends BaseService<ClassifyDao, Classify,Long> {
     public List<Classify> query(List<Conditions> conditions){
         //通过传入的deleted来判断是查询全部还是查询未删除的
 
-        boolean flag = false;
+        boolean flag = false;                                      //用于判断是否是通过搜索查找分类
         for (Conditions condition: conditions){
             if (condition.getCondition().equals("LIKE")) {         //如果是搜索，则需要把他的父节点都找出来
                 flag = true;
@@ -28,11 +29,14 @@ public class ClassifyService extends BaseService<ClassifyDao, Classify,Long> {
             }
         }
 
+
+        //根据查询条件查询
         List<SelectParam> selectParamList = getSelectParamList((ArrayList<Conditions>) conditions);
         List<Classify> classify = findByConditionAndDelete(selectParamList);
 
-        if (flag == true){        //通过模糊查询查找分类、
-            List<Classify> classifies = new ArrayList<>();
+
+        if (flag == true){        //通过模糊查询查找分类
+            List<Classify> classifies = new ArrayList<>();  //存放查询得到的结果
             for (Classify classify1 : classify){
                 classifies.add(classify1);
                 Long sId = classify1.getSId();
@@ -93,5 +97,54 @@ public class ClassifyService extends BaseService<ClassifyDao, Classify,Long> {
         if (classify!=null)
            name =  classify.getName();
         return name;
+    }
+
+    /**
+     * 返回递归树
+     */
+    public List<Menu> recursionTree(List<Conditions> conditions){
+
+        List<Classify> classifies = query(conditions);   //得到所以的分类
+        List<Menu> menuList = new ArrayList<>();        //将得到的分类装入树对象中
+        for (Classify classify : classifies){
+            Menu menu = new Menu();
+            menu.setClassify(classify);
+            menuList.add(menu);
+        }
+
+
+        //获取其中的根节点,并放入Menu对象中
+        List<Menu> rootMenuLists = new ArrayList<>();  //用于保存根节点
+        for (Menu menuNode : menuList){
+            if (menuNode.getClassify().getSId() == 0){         //找到所有的根节点
+               rootMenuLists.add(menuNode);
+            }
+        }
+
+        //根据父节点找到对应的子节点
+        List<Menu> treeMenus = new ArrayList<>();       //用于存储全部的树形结构
+        for (Menu menuNode : rootMenuLists){               //遍历根节点，建立子树形结构
+            menuNode = buildChildTree(menuNode,menuList);  //调用建立子树方法，返回一个以menuNode为根节点的树形结构
+            treeMenus.add(menuNode);
+        }
+
+        return treeMenus;             //返回得到的树形结构
+    }
+
+    /**
+     * 递归，建立子树形结构
+     * @param pNode 父节点
+     * @return  pNode 设置好子节点的父节点
+     */
+    public Menu buildChildTree(Menu pNode,List<Menu> menuList){
+        List<Menu> childMenus = new ArrayList<>();           //用于保存父节点pNode的子节点信息
+
+        for (Menu menuNode : menuList){                      //遍历所有分类
+            if (menuNode.getClassify().getSId() == pNode.getClassify().getId()){  //找到pNode节点的所有子节点
+                childMenus.add(buildChildTree(menuNode,menuList));             //将当前节点加入到父节点的子节点集合中，并且以当前节点为父节点继续找子节点
+            }
+        }
+        pNode.setChildren(childMenus);                                        //找到pNode节点的子节点后，使用setter方法
+        return pNode;
     }
 }

@@ -142,7 +142,7 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
             limit = pageSize;
         }
 
-        Specification querySpecifi = getSpecification(selectParams, false);                              //      没看懂是用来干什么的
+        Specification querySpecifi = getSpecification(selectParams, false);
         PageBean pageBean = new PageBean(page, limit, sort);
         return bizRepository.findAll(querySpecifi, pageBean);               //执行查询语句
     }
