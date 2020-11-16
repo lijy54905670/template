@@ -1,29 +1,26 @@
 package com.xinyuan.ms.web.controller;
 
+import com.alibaba.druid.support.json.JSONUtils;
 import com.xinyuan.ms.common.util.ResultUtil;
 import com.xinyuan.ms.common.web.Message;
 import com.xinyuan.ms.common.web.PageBody;
-import com.xinyuan.ms.web.vo.Survey;
 import com.xinyuan.ms.entity.User;
 import com.xinyuan.ms.service.UserService;
-import com.xinyuan.ms.web.vo.Test1;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import net.minidev.json.JSONUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Iterator;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
  * @Author: hzx
  */
-@Api(description = "用户管理1")
+@Api(description = "UserController")
 @RestController        //@Controller注解（定义了这个类是一个控制器类） + @ResponseMapping注解（加上@esponsebody后返回结果不会被解析为跳转路径，而是直接写入HTTP response body中）
                         //负责将用户发来的URL请求转发到对应的服务接口（service层）
 @RequestMapping("/user")  //提供路由信息，负责URL到Controller中的具体函数的映射。
@@ -68,24 +65,24 @@ public class UserController {
     @RequestMapping(value = "query", method = RequestMethod.POST)
     public ResponseEntity query(@RequestBody PageBody pageBody) {       //PageBody:查询条件、排序条件、分页的配置
         Page<User> page = null;
-        userService.test();
-        Test1 t = new Test1();
         try {
             page = userService.query(pageBody);
-            List<User> content = page.getContent();
-            Iterator iterator = content.iterator();
-            while (iterator.hasNext()){
-                User user = (User) iterator.next();
-                System.out.println(user.getId());
-            }
-
-            t.setPage(page);
-            Survey survey = new Survey();
-            survey.setId(1l);
-            t.setSurvey(survey);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ResponseEntity.ok(t);
+        return ResponseEntity.ok(page);
+    }
+
+    @ApiOperation(value = "条件查询", notes = "条件查询")  //给方法添加说明
+    @RequestMapping(value = "query2", method = RequestMethod.POST)
+    public ResponseEntity query2(HttpServletResponse response, @RequestBody PageBody pageBody) {       //PageBody:查询条件、排序条件、分页的配置
+
+        Page<User> page = null;
+        try {
+            page = userService.query(pageBody);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(page);
     }
 }

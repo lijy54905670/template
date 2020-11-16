@@ -8,9 +8,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface OptionDao extends JpaRepository<Option,Long> {
+public interface OptionDao extends BaseJpaRepository<Option, Long> {
 
     //通过问题id查找选项
-    List<Option> findOptionByQIdEquals(Long qId);
+    List<Option> findOptionsByQIdEquals(Long qId);
 
 }

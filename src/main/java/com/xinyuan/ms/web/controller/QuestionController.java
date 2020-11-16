@@ -1,19 +1,21 @@
 package com.xinyuan.ms.web.controller;
 
-import com.xinyuan.ms.entity.Option;
-import com.xinyuan.ms.entity.Question;
-import com.xinyuan.ms.mapper.OptionDao;
+import com.xinyuan.ms.common.util.ResultUtil;
+import com.xinyuan.ms.common.web.Message;
 import com.xinyuan.ms.service.OptionService;
 import com.xinyuan.ms.service.QuestionService;
+import com.xinyuan.ms.web.request.SaveConditionsAndUId;
 import com.xinyuan.ms.web.request.SaveQuestionOption;
+import com.xinyuan.ms.web.vo.NextQuestion;
+import com.xinyuan.ms.web.vo.QuestionOptionVo;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Iterator;
 import java.util.List;
 
 @RestController
@@ -33,18 +35,32 @@ public class QuestionController {
      */
     @ApiOperation(value = "保存", notes = "保存") //给这个方法添加说明
     @RequestMapping(value = "save", method = RequestMethod.POST)
-    public String save(@RequestBody List<SaveQuestionOption> saveQuestionOptionList){
+    public ResponseEntity<Message> save(@RequestBody List<SaveQuestionOption> saveQuestionOptionList){
+        questionService.saveQuestionOption(saveQuestionOptionList);
+        return ResponseEntity.ok(ResultUtil.success());
+    }
 
-        if (!saveQuestionOptionList.isEmpty()) {
-            for (SaveQuestionOption saveQuestionAnswer:saveQuestionOptionList) {
-                Question question = saveQuestionAnswer.getQuestion();       //获取Question对象
-                List<Option> list = saveQuestionAnswer.getOptionList();     //获取Option对象列表
 
-                Long qId = questionService.save(question);                   //如果是新增问题则返回问题id
-                optionService.save(question,list,qId);
-            }
+    /**
+     *     下一题
+     * @param saveConditionsAndUId
+     * @return
+     */
+    @ApiOperation(value = "下一题", notes = "下一题")  //给方法添加说明
+    @RequestMapping(value = "next", method = RequestMethod.POST)
+    public ResponseEntity<NextQuestion> next(@RequestBody SaveConditionsAndUId saveConditionsAndUId) {
+        NextQuestion next = questionService.next(saveConditionsAndUId); //返回一个封装了问题，选项，答题记录的对象
+        return ResponseEntity.ok(next);
+    }
 
-        }
-        return "ok";
+    /**
+     *     查询全部题目选项
+     * @return
+     */
+    @ApiOperation(value = "查询题目选项", notes = "查询题目选项")  //给方法添加说明
+    @RequestMapping(value = "query", method = RequestMethod.POST)
+    public ResponseEntity<List<QuestionOptionVo>> query() {
+        List<QuestionOptionVo> questionOptionVos = questionService.queryAll();
+        return ResponseEntity.ok(questionOptionVos);
     }
 }

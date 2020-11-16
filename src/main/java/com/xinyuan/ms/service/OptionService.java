@@ -1,93 +1,69 @@
 package com.xinyuan.ms.service;
 
-import com.xinyuan.ms.common.util.EntityUtils;
-import com.xinyuan.ms.common.util.ReflectionUtils;
+import com.xinyuan.ms.common.service.ParamCondition;
+import com.xinyuan.ms.common.service.SelectParam;
+import com.xinyuan.ms.common.web.Conditions;
 import com.xinyuan.ms.entity.Option;
-import com.xinyuan.ms.entity.Question;
 import com.xinyuan.ms.mapper.OptionDao;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @Slf4j
-public class OptionService {
+public class OptionService extends BaseService<OptionDao,Option,Long>{
 
-    @Autowired
-    OptionDao optionDao;
+    public void deleteByQId(Long qId){
+        List<Option> optionList =findOptionByQId(qId);     //得到问题的全部选项
+        if (!optionList.isEmpty()){
+            for (Option option: optionList) {
+                remove(option.getId());                                 //调用删除方法
+            }
+        }
+    }
 
-    public void save(Question question, List<Option> options, Long qId) {
-        if(!options.isEmpty()) {
-            if (question.getDeleted() == 1){  //如果问题删除的话，删除问题的全部选项
-                List<Option> optionList = optionDao.findOptionByQIdEquals(question.getId()); //得到问题的全部选项
-                if (!optionList.isEmpty()){
-                    for (Option option: optionList) {
-                        delete(option.getId());
-                    }
-                }
-            } else if (qId != null) {     //题目是新建的
-                for (Option option: options) {
-                    add(option,qId);   //将问题选项添加到选项表
-                }
+    public void save1(Option option){//题目是新建的
+                save(option);
+    }
+
+    public void update1(List<Option> options,Long qId) {
+        for (Option option : options) {
+            int deleted = option.getDeleted();
+            if (deleted == 1) {
+                remove(option.getId());
+            } else if (option.getId() == null) {
+                option.setQId(qId);
+                save1(option);
             } else {
-                Long gId = question.getId();              //获取当前修改的题目id
-                for (Option o : options) {
-                    Long oId = o.getId();      //获取需要修改的选项id
-                    if (oId != null) {        //修改原有的选项,oId有的时候
-                        if (o.getDeleted() != 1) {    //如果当前选项不是是要删除的
-                            update(o,gId);            //更新选项
-                        }else {
-                            delete(oId);
-                        }
-                    }else{
-                       add(o,gId);
-                    }
-                }
+                update(option);
             }
         }
     }
 
-    /**
-     * 添加选项
-     * @param option 选项
-     * @param qId 问题id
-     */
-    public void add(Option option,Long qId){
-            option.setQId(qId);
-            optionDao.saveAndFlush(option);
-    }
 
-    /**
-     * 更新选项
-     * @param option  新的选项对象
-     * @param qId  选项所属的问题id
-     */
-    public void update(Option option,Long qId){
-        option.setQId(qId);                                     //获取当前选项id
-        Option result = optionDao.findOne(option.getId());      //得到原来的选项
-        if (result != null) {
-            System.out.println(result.getContent() + "---------");
-            System.out.println(option.getQId() + "修改选项的问题id");
+        /**
+         * 通过问题id查找对应选项
+         * @param qId
+         * @return
+         */
+        public List<Option> findOptionByQId(Long qId) {
 
-            EntityUtils.copyPropertiesIgnoreNull(option, result);         //将传入的选项复制到原来的选项中
-            optionDao.saveAndFlush(result);
+           /* ArrayList<Conditions> conditions = new ArrayList<>();       //新建一个参数集合
+            Conditions condition = new Conditions();                   //新增一个参数，用于通过问题id查询选项
+            condition.setKey("qId");
+            condition.setValue(qId);
+            condition.setCondition("EQUAL");
+            conditions.add(condition);
+
+            List<Option> byCondition = findByCondition(getSelectParamList(conditions)); //调用baseService中的不带分页的查询方法
+*/
+           List<SelectParam> selectParamList = new ArrayList<>();
+           SelectParam selectParam = new SelectParam("qId",qId, ParamCondition.EQUAL);     //新建一个查询参数对象
+           selectParamList.add(selectParam);
+            List<Option> byCondition = findByCondition(selectParamList);
+            return byCondition;                                                                       //返回查询到的选项列表
         }
     }
 
-    /**
-     * 删除选项
-     * @param oId  需要删除的选项id
-     */
-    public void delete(Long oId){
-        Option result = optionDao.getOne(oId);
-        if (result != null){
-            if (ReflectionUtils.hasField(result, "deleted")) {   //判断查询出来的这个user对象中是否有deleted这个属性，如果有的话则执行下面代码
-                ReflectionUtils.invokeSetter(result, "deleted", 1);  //这里是使用反射，通过setXXX方法将entity中的deleted属性的值设为1
-            }
-            optionDao.save(result);
-        }
-    }
-}

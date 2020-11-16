@@ -11,20 +11,18 @@ import static javax.persistence.GenerationType.IDENTITY;
 
 @Data
 @Entity
-@Table(name = "tb_question")
-public class Question implements Serializable {
+@Table(name = "tb_question_type")
+public class QuestionType implements Serializable {
 
     @Id
     @ApiModelProperty(value = "主键", name = "id", example = "0")
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
-    @ApiModelProperty(value = "题目标题", name = "title", example = "title")
-    @Column(name = "title")
-    private String title;
-
+    @ApiModelProperty(value = "題型", name = "name", example = "单选")
+    @Column(name = "name")
+    private String name;
     @ApiModelProperty(value = "删除,0表示未删除，1表示删除", name = "deleted", example = "0")
     @Column(name = "deleted")
-    private Integer deleted;
-
+    private Integer deleted = 0;
 }

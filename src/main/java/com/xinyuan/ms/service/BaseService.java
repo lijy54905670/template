@@ -45,7 +45,7 @@ import java.util.UUID;
 @Slf4j  //如果不想每次都写private  final Logger logger = LoggerFactory.getLogger(当前类名.class); 可以用注解@Slf4j;
 public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID extends Serializable> {
 
-    @Autowired  //自动导入依赖的bean
+    @Autowired                    //自动导入依赖的bean
     protected J bizRepository;    //注入接口，类型是一个泛型，在使用时具体赋值，提高了代码的可重用性
 
     @Autowired
@@ -110,13 +110,6 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
             ID id = (ID) ReflectionUtils.getFieldValue(entity, "id");       //获取id的属性值（没有设置的话为null）
             result = bizRepository.findOne(id);                                       //通过得到的值，从数据库中查询对应的记录（如果你save没有给id话，回报错）
         }
-        /**
-         * 可以在这里做如果数据库中没有这个记录的话就插入操作
-         */
-        if (result == null){
-            bizRepository.saveAndFlush(entity);                             //如果数据库中没有这条记录，则插入（但是id不是当前的id，而是数据库的id了）
-        }
-
         EntityUtils.copyPropertiesIgnoreNull(entity, result);            //将非空的属性值copy到result对象中去（也就是把你修改了值得那部分替换原来的数据，没有修改的那部分不动他）
         //如果你给的要更新的字段在数据库中没有的话，会抛出异常
         bizRepository.saveAndFlush(result);                              //将修改好后的对象保存回数据库
@@ -400,20 +393,5 @@ public abstract class BaseService<J extends BaseJpaRepository<T, ID>, T, ID exte
             sort = new Sort(Sort.Direction.ASC, "id");
         }
         return sort;
-    }
-
-    public void test(){
-        List<User> byDeletedEquals = bizRepository.findUserByDeletedEquals(0);
-        if (byDeletedEquals.isEmpty()){
-            System.out.println("没有数据");
-        }
-        Iterator<User> iterator = byDeletedEquals.iterator();
-        int i = 0;
-        while (iterator.hasNext()){
-            i++;
-            System.out.println(iterator.next().getAge());
-            if(i == 3)
-                break;
-        }
     }
 }
